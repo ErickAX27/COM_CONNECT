@@ -1,21 +1,24 @@
 from MongoSync import MongoSync
+import time
 class Luz:
-    def __init__(self, id_sensor, nivel_luz, fecha_registro, ubicacion, alerta):
-        self.id_sensor = id_sensor
-        self.nivel_luz = nivel_luz
-        self.fecha_registro = fecha_registro
-        self.ubicacion = ubicacion
-        self.alerta = alerta
+    def __init__(self, valor):
+        if valor == 1:
+            self.status = "off"
+            self.alert_triggered = False
+            self.alert_message = "The light is off in the storage area"
+        else:
+            self.status = "on"
+            self.alert_triggered = True
+            self.alert_message = "The light is on in the storage area"
+        self.event_date = time.strftime("%Y-%m-%d %H:%M:%S")
         self.mongo_sync = MongoSync("LightSensor", "luz.json","local_luz.json")
 
     def serializar(self):
             return {
-                "tipo_sensor": "lux",
-                "id_sensor": self.id_sensor,
-                "nivel_luz": self.nivel_luz,
-                "fecha_registro": self.fecha_registro,
-                "ubicacion": self.ubicacion,
-                "alerta": self.alerta
+                "status": self.status,
+                "event_date": self.event_date,
+                "alert_triggered": self.alert_triggered,
+                "alert_message": self.alert_message
             }
 
     def guardar(self):

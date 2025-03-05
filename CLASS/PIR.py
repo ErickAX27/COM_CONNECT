@@ -1,17 +1,26 @@
+import time
+from MongoSync import MongoSync
 class MovimientoPIR:
-    def __init__(self,id_sensor, estado, fecha_evento, ubicacion, alerta):
-        self.id_sensor = id_sensor
-        self.estado = estado
-        self.fecha_evento = fecha_evento
-        self.ubicacion = ubicacion
-        self.alerta = alerta
+    def __init__(self,valor):
+        if valor == 1:
+            self.motion_detected = True
+            self.alert_triggered = True
+            self.alert_message = "Movement detected in the storage area"
+        else:
+            self.motion_detected = False
+            self.alert_triggered = False
+            self.alert_message = "No movement detected in the storage area"
+        self.event_date = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.mongo_sync = MongoSync("PirSensor", "pir.json", "local_pir.json")
 
     def serializar(self):
-            return {
-                "tipo_sensor": "pir",
-                "id_sensor": self.id_sensor,
-                "estado": self.estado,
-                "fecha_evento": self.fecha_evento,
-                "ubicacion": self.ubicacion,
-                "alerta": self.alerta
-            }
+        return {
+            "motion_detected": self.motion_detected,
+            "alert_triggered": self.alert_triggered,
+            "alert_message": self.alert_message,
+            "event_date": self.event_date
+        }
+
+    def guardar(self):
+        datos = [self.serializar()]
+        self.mongo_sync.enviar_datos(datos)
