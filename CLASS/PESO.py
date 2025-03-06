@@ -15,4 +15,3 @@ class Peso:
                 "ubicacion": self.ubicacion,
                 "alerta": self.alerta
             }
-

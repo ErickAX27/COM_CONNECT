@@ -1,7 +1,7 @@
 import serial
 import time
 from CLASS.PIR import MovimientoPIR
-from CLASS.PESO import Peso
+# from CLASS.PESO import Peso
 from CLASS.LUZ import Luz
 from CLASS.DHT import DHT
 
