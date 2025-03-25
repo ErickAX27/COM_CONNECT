@@ -11,7 +11,6 @@ class Luz:
             self.alert_triggered = True
             self.alert_message = "The light is on in the storage area"
         self.event_date = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.mongo_sync = MongoSync("LightSensor", "luz.json","local_luz.json")
 
     def serializar(self):
             return {
@@ -22,5 +21,5 @@ class Luz:
             }
 
     def guardar(self):
-        datos = [self.serializar()]
-        self.mongo_sync.enviar_datos(datos)
+        datos = self.serializar()
+        return datos

@@ -3,6 +3,9 @@ import threading
 import time
 from pymongo import MongoClient, errors
 import logging
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -11,7 +14,7 @@ class MongoSync:
         self.nombre_coleccion = nombre_coleccion
         self.archivo_json = archivo_json
         self.respaldo_json = respaldo_json
-        self.mongo_uri = "mongodb+srv://lexus:amnesia00@cluster0.rydnf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+        self.mongo_uri = os.getenv("MONGO_STRING")
         self.cliente = None
         self.base_datos = None
         self.coleccion = None
@@ -52,33 +55,33 @@ class MongoSync:
                 del dato["_id"]
         return datos
 
-    def enviar_datos(self, lista_datos: list):
-        if not isinstance(lista_datos, list):
-            raise ValueError("El parámetro debe ser una lista de objetos JSON.")
-        self.guardar_en_respaldo(lista_datos)
-        self.guardar_en_local(lista_datos)
-        lista_datos = self.limpiar_datos(lista_datos)
+    def enviar_datos(self, dato: dict):
+        if not isinstance(dato, dict):
+            raise ValueError("El parámetro debe ser un objeto JSON.")
+        self.guardar_en_respaldo(dato)
+        self.guardar_en_local(dato)
+        dato = self.limpiar_datos([dato])[0]
 
         if self.esta_conectado():
             try:
-                self.coleccion.insert_many(lista_datos)
+                self.coleccion.insert_one(dato)
             except errors.PyMongoError:
                 pass
 
-    def guardar_en_local(self, lista_datos: list):
-        try:
-            with open(self.archivo_json, "a") as archivo:
-                for dato in lista_datos:
-                    json.dump(dato, archivo)
-                    archivo.write("\n")
-        except IOError:
-            pass
+    def guardar_en_local(self, dato: dict):
+        self._guardar_dato(self.archivo_json, dato)
 
-    def guardar_en_respaldo(self, lista_datos: list):
-        try:
-            with open(self.respaldo_json, "a") as archivo:
-                for dato in lista_datos:
-                    json.dump(dato, archivo)
-                    archivo.write("\n")
-        except IOError:
-            pass
+    def guardar_en_respaldo(self, dato: dict):
+        self._guardar_dato(self.respaldo_json, dato)
+
+    def _guardar_dato(self, archivo_path: str, dato: dict):
+        datos = []
+        if os.path.exists(archivo_path):
+            with open(archivo_path, "r") as archivo:
+                try:
+                    datos = json.load(archivo)
+                except json.JSONDecodeError:
+                    pass
+        datos.append(dato)
+        with open(archivo_path, "w") as archivo:
+            json.dump(datos, archivo, indent=4)

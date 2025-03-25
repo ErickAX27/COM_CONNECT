@@ -14,7 +14,6 @@ class DHT:
             self.alert_triggered = True
             self.alert_message = "Humidity outside the permitted range"
         self.event_date = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.mongo_sync = MongoSync("TemperatureHumiditySensor", "DHT.json", "local_DHT.json")
 
     def serializar(self):
         return {
@@ -26,5 +25,5 @@ class DHT:
         }
 
     def guardar(self):
-        datos = [self.serializar()]
-        self.mongo_sync.enviar_datos(datos)
+        datos = self.serializar()
+        return datos

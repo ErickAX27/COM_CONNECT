@@ -11,7 +11,6 @@ class MovimientoPIR:
             self.alert_triggered = False
             self.alert_message = "No movement detected in the storage area"
         self.event_date = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.mongo_sync = MongoSync("PirSensor", "pir.json", "local_pir.json")
 
     def serializar(self):
         return {
@@ -22,5 +21,5 @@ class MovimientoPIR:
         }
 
     def guardar(self):
-        datos = [self.serializar()]
-        self.mongo_sync.enviar_datos(datos)
+        datos = self.serializar()
+        return datos
