@@ -1,0 +1,17 @@
+
+ARDUINO A RASPBERRY{
+DHT01:00:00  // temperatura y humedad
+LUZ01:0      // luz
+MOV01:0      // movimiento (PIR)
+PPADACC:000000000 // Acceso a la puerta
+PADPSO:0000:240 // Producto de bascula (A = Add),(# = Finish),(C = Cancel)
+IDCRD:00 00 00 00 // Codigo de tarjeta RFID
+}
+
+
+RASPBERRY A ARDUINO{
+ACCESS_GARANTEED // Acceso concedido
+ACCESS_DENIED // Acceso denegado
+}
+
+

@@ -1,19 +1,21 @@
+import time
 class Rfid:
-    def __init__(self, id_sensor,tarjeta_id,usuario_id,nombre_usuario,fecha_registro,evento,ubicacion):
-        self.id_sensor = id_sensor
-        self.tarjeta_id = tarjeta_id
-        self.usuario_id = usuario_id
-        self.fecha_registro = fecha_registro
-        self.evento = evento
-        self.ubicacion = ubicacion
+    def __init__(self, rfid_code, name, position, area):
+        self.rfid_code = rfid_code
+        self.name = name
+        self.position = position
+        self.area = area
+        self.event_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
     def serializar(self):
-            return {
-                "tipo_sensor": "rfid",
-                "id_sensor": self.id_sensor,
-                "tarjeta_id": self.tarjeta_id,
-                "usuario_id": self.usuario_id,
-                "fecha_registro": self.fecha_registro,
-                "evento": self.evento,
-                "ubicacion": self.ubicacion
-            }
+        return {
+            "rfid_code": self.rfid_code,
+            "name": self.name,
+            "position": self.position,
+            "area": self.area,
+            "event_date": self.event_date
+        }
+
+    def guardar(self):
+        datos = self.serializar()
+        return datos

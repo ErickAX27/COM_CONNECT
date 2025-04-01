@@ -1,4 +1,3 @@
-from MongoSync import MongoSync
 import time
 class Luz:
     def __init__(self, valor):

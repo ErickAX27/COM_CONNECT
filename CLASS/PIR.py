@@ -1,5 +1,4 @@
 import time
-from MongoSync import MongoSync
 class MovimientoPIR:
     def __init__(self,valor):
         if valor == 1:

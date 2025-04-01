@@ -1,0 +1,65 @@
+[
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:01",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:02",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:02",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:02",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:03",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:03",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:04",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:04",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    },
+    {
+        "temperature_c": 41.0,
+        "humidity_percent": 22.0,
+        "event_date": "2025-03-31 21:43:05",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    }
+]

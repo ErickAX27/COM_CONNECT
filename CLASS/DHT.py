@@ -1,4 +1,3 @@
-from MongoSync import MongoSync
 import time
 class DHT:
     def __init__(self,Temperatura,Humedad):

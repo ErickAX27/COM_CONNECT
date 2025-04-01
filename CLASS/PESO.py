@@ -1,17 +1,22 @@
+from datetime import datetime
 class Peso:
-    def __init__(self,id_sensor, peso, fecha_registro, ubicacion, alerta):
-        self.id_sensor = id_sensor
+
+    def __init__(self,codigo, peso,zona):
+        self.codigo = codigo
         self.peso = peso
-        self.fecha_registro = fecha_registro
-        self.ubicacion = ubicacion
-        self.alerta = alerta
+        self.zona = zona
+
 
     def serializar(self):
-            return {
-                "tipo_sensor": "peso",
-                "id_sensor": self.id_sensor,
-                "peso": self.peso,
-                "fecha_registro": self.fecha_registro,
-                "ubicacion": self.ubicacion,
-                "alerta": self.alerta
-            }
+        return {
+            "event_date": {
+                "$date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            },
+            "area_name": self.zona,
+            "delivery_id": self.codigo,
+            "weight_kg": self.peso
+        }
+
+    def guardar(self):
+        datos = self.serializar()
+        return datos
