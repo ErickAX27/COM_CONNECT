@@ -22,5 +22,13 @@
             "$date": "2025-04-01T10:31:34.000Z"
         },
         "origin": "PASSWORD"
+    },
+    {
+        "sensor_id": 1,
+        "event_type": "ACCESO",
+        "event_date": {
+            "$date": "2025-04-02T16:28:03.000Z"
+        },
+        "origin": "PASSWORD"
     }
 ]

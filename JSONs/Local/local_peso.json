@@ -22,5 +22,53 @@
         "area_name": "NEW_DEVICE",
         "delivery_id": "1111",
         "weight_kg": 214.0
+    },
+    {
+        "event_date": {
+            "$date": "2025-04-01T14:28:44.000Z"
+        },
+        "area_name": "NEW_DEVICE",
+        "delivery_id": "111",
+        "weight_kg": -1.0
+    },
+    {
+        "event_date": {
+            "$date": "2025-04-01T15:49:23.000Z"
+        },
+        "area_name": "NEW_DEVICE",
+        "delivery_id": "11111",
+        "weight_kg": 1.0
+    },
+    {
+        "event_date": {
+            "$date": "2025-04-01T15:53:07.000Z"
+        },
+        "area_name": "NEW_DEVICE",
+        "delivery_id": "123456",
+        "weight_kg": 19.0
+    },
+    {
+        "event_date": {
+            "$date": "2025-04-01T16:55:16.000Z"
+        },
+        "area_name": "NEW_DEVICE",
+        "delivery_id": "1111",
+        "weight_kg": 18.0
+    },
+    {
+        "event_date": {
+            "$date": "2025-04-01T17:19:03.000Z"
+        },
+        "area_name": "NEW_DEVICE",
+        "delivery_id": "555555",
+        "weight_kg": 19.0
+    },
+    {
+        "event_date": {
+            "$date": "2025-04-01T19:49:10.000Z"
+        },
+        "area_name": "NEW_DEVICE",
+        "delivery_id": "11125546",
+        "weight_kg": -6.0
     }
 ]

@@ -33,7 +33,7 @@ class MongoSync:
             return
         try:
             self.cliente = MongoClient(self.mongo_uri, serverSelectionTimeoutMS=2000)
-            self.base_datos = self.cliente["GateDB"]
+            self.base_datos = self.cliente["GateeDB"]
             self.coleccion = self.base_datos[self.nombre_coleccion]
             # Forzar la conexión con server_info()
             self.cliente.server_info()

@@ -12,6 +12,7 @@ from CLASS.CERRADURA import Cerradura
 from CLASS.RFID import Rfid
 from MongoSync import MongoSync
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -19,8 +20,15 @@ load_dotenv()
 
 class Main:
     def __init__(self):
+        # Add this line to the __init__ method after initializing MongoDB connectors
+        self.rfids_autorizados = []
+
         # Create base directory path that's absolute
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Debug: Print base directory and .env path
+        print(f"Directorio base: {self.base_dir}")
+        print(f"Ruta del .env: {os.path.join(self.base_dir, '.env')}")
 
         # Create directories if they don't exist
         self.jsons_dir = os.path.join(self.base_dir, "JSONs")
@@ -36,11 +44,13 @@ class Main:
             print(f"Created directory: {self.local_dir}")
 
         # Initialize device attributes
-        self.device_id = os.getenv("DEVICE_ID", "0")
+        self.device_id = os.getenv("DEVICE_ID", "0")  # Default to "0" if not found
+        print(f"Valor inicial de DEVICE_ID: {self.device_id}")
+
         self.device_name = "NEW_DEVICE"
         self.api_endpoint = os.getenv("API_ENDPOINT")
         self.reading_time = 6000  # milliseconds
-        self.response_time = 40000  # milliseconds
+        self.response_time = 300000  # milliseconds
         self.password = 123
         self.ultima_actualizacion = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -82,6 +92,22 @@ class Main:
         self.last_api_check = 0
         self.check_interval = 300  # Check API every 300 seconds
 
+    def cargar_rfids_autorizados(self):
+        """Carga los RFIDs autorizados desde la API o MongoDB"""
+        self.rfids_autorizados = []
+
+        # Primero intentar obtener de MongoDB
+        rfid_documents = self.mongo_rfid.consultar()
+
+        if rfid_documents:
+            for doc in rfid_documents:
+                if "rfid_code" in doc:
+                    self.rfids_autorizados.append(doc["rfid_code"])
+
+            print(f"Cargados {len(self.rfids_autorizados)} RFIDs autorizados de MongoDB")
+        else:
+            print("No se encontraron RFIDs autorizados en MongoDB")
+
     def register_device(self):
         """Register new device with the API if device_id is 0"""
         if self.device_id == "0":
@@ -108,16 +134,23 @@ class Main:
                 payload = {
                     'name': 'NEW_DEVICE',
                     'password': '12345678',
-                    'reading_time': '3600000',
-                    'response_time': '18000000'
+                    'area_id': '1',
+                    'reading_time': '60000',
+                    'response_time': '300000'
                 }
 
                 # Register device with API
                 register_response = requests.post(self.api_endpoint, json=payload)
                 register_response.raise_for_status()
 
-                # Update environment variable
+                # Update environment variable and .env file
                 os.environ["DEVICE_ID"] = self.device_id
+                self.update_env_file("DEVICE_ID", self.device_id)
+
+                # Reload environment variables to ensure they're updated
+                load_dotenv(override=True)
+                self.device_id = os.getenv("DEVICE_ID")  # Update instance variable
+
                 print(f"Device registered with ID: {self.device_id}")
                 return True
 
@@ -126,13 +159,71 @@ class Main:
                 return False
         return True
 
+    def update_env_file(self, key, value):
+        """Update the .env file with the new key-value pair, handling different formats"""
+        env_file = os.path.join(self.base_dir, ".env")
+
+        # Print path for debugging
+        print(f"Actualizando archivo .env en: {env_file}")
+
+        updated = False
+        new_lines = []
+
+        # Read existing content
+        try:
+            with open(env_file, "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            lines = []
+
+        # Process each line
+        for line in lines:
+            line_stripped = line.strip()
+
+            # Skip comments and empty lines
+            if line_stripped.startswith("#") or not line_stripped:
+                new_lines.append(line)
+                continue
+
+            # Split into key and value
+            if '=' in line_stripped:
+                current_key, _, current_value = line_stripped.partition('=')
+                current_key = current_key.strip()
+
+                if current_key == key:
+                    # Replace the existing key
+                    new_line = f"{key}={value}\n"
+                    new_lines.append(new_line)
+                    updated = True
+                else:
+                    # Keep the original line
+                    new_lines.append(line)
+            else:
+                # Keep lines without '=' intact
+                new_lines.append(line)
+
+        # Add new key-value pair if not updated
+        if not updated:
+            new_lines.append(f"{key}={value}\n")
+
+        # Write back to file
+        with open(env_file, "w") as file:
+            file.writelines(new_lines)
+
+        # Print confirmation
+        print(f"Archivo .env actualizado. Nueva entrada: {key}={value}")
+        print("Contenido actualizado del .env:")
+        with open(env_file, "r") as file:
+            print(file.read())
+
     def actualizar_variables_desde_api(self):
         """Update variables from API using device ID"""
         if not self.api_endpoint:
             print("API_ENDPOINT no configurado")
             return False
 
-        url = f"{self.api_endpoint}/{self.device_id}"
+        # Ensure there is no double slash in the URL
+        url = f"{self.api_endpoint.rstrip('/')}/{self.device_id}"
 
         try:
             # Make the API request
@@ -142,7 +233,18 @@ class Main:
             # Parse the JSON response
             data = response.json()
 
-            # Check if updated_at is different from ultima_actualizacion
+            # Check if data is a list (multiple devices)
+            if isinstance(data, list):
+                # Find our device in the list
+                for device in data:
+                    if str(device.get('id', '')) == str(self.device_id):
+                        data = device
+                        break
+                else:
+                    print(f"Device ID {self.device_id} not found in API response")
+                    return False
+
+            # Now data should be a dictionary
             if data.get('updated_at') != self.ultima_actualizacion:
                 # Update variables
                 self.reading_time = int(data.get('reading_time', self.reading_time))
@@ -158,8 +260,9 @@ class Main:
         except requests.exceptions.RequestException as e:
             print(f"Error al realizar la solicitud a la API: {e}")
             return False
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError, TypeError) as e:
             print(f"Error al procesar la respuesta de la API: {e}")
+            print(f"Tipo de respuesta: {type(data).__name__}, Contenido: {data}")
             return False
 
     def procesar_dato(self, dato):
@@ -204,79 +307,94 @@ class Main:
             return tipo_sensor, id_sensor, valores
         return None, None, None
 
-    def crear_y_guardar_sensor(self, tipo_sensor, id_sensor, valores, ser=None):
-        """Create sensor object and save data based on sensor type"""
-        if tipo_sensor == "MOV":
-            sensor = MovimientoPIR(int(valores[0]))
-            self.mongo_pir.guardar_datos(sensor.guardar())
+    def crear_y_guardar_sensor(self, tipo_sensor, id_sensor, valores, port):
+        try:
+            if tipo_sensor == "MOV":
+                sensor = MovimientoPIR(int(valores[0]))
+                self.mongo_pir.guardar_datos(sensor.guardar())
 
-        elif tipo_sensor == "LUZ":
-            sensor = Luz(int(valores[0]))
-            self.mongo_light.guardar_datos(sensor.guardar())
+            elif tipo_sensor == "LUZ":
+                try:
+                    # Clean up the value if it contains unexpected characters
+                    valor_limpio = valores[0].strip().split('\r')[0]
+                    sensor = Luz(int(valor_limpio))
+                    self.mongo_light.guardar_datos(sensor.guardar())
+                except ValueError:
+                    logging.warning(f"Valor no válido para sensor de Luz ignorado: {valores[0]}")
+                    return
 
-        elif tipo_sensor == "DHT":
-            humedad = float(valores[0])
-            temperatura = float(valores[1])
-            sensor = DHT(temperatura, humedad)
-            self.mongo_temp.guardar_datos(sensor.guardar())
+            elif tipo_sensor == "DHT":
+                try:
+                    humedad = float(valores[0])
+                    temperatura = float(valores[1])
+                    sensor = DHT(temperatura, humedad)
+                    self.mongo_temp.guardar_datos(sensor.guardar())
+                except (ValueError, IndexError):
+                    logging.warning(f"Valores no válidos para sensor DHT ignorados: {valores}")
+                    return
 
-
-
-        elif tipo_sensor == "PPADACC":
-
-            codigo = valores[0]
-
-            try:
-
-                # Convert the received code to integer for comparison
-
-                if int(codigo) == self.password:
-
-                    if ser:
-                        ser.write("ACCESS_GRANTED\n".encode())
-
-                    print("ACCESS_GRANTED")
-
-                    # Create lock event
-
-                    cerradura = Cerradura(id_sensor, "ACCESO", "PASSWORD")
-                    self.mongo_cerradura.guardar_datos(Cerradura.serializar())
-
-                    self.mongo_cerradura.guardar_datos(cerradura.serializar())
-
-                    # Try to send immediately
-
-                    self.mongo_cerradura.subir_a_mongo()
-
-                else:
-
-                    if ser:
-                        ser.write("ACCESS_DENIED\n".encode())
-
-                    print("ACCESS_DENIED")
-
-            except ValueError:
-
-                if ser:
-                    ser.write("ACCESS_DENIED\n".encode())
-
-                print("ACCESS_DENIED - Invalid code format")
-
-        elif tipo_sensor == "PADPSO":
-            if len(valores) >= 2:
+            elif tipo_sensor == "PPADACC":
                 codigo = valores[0]
-                peso_valor = float(valores[1])
-                peso = Peso(codigo, peso_valor, self.device_name)
-                self.mongo_peso.guardar_datos(peso.serializar())
-                # Try to send immediately
-                self.mongo_peso.subir_a_mongo()
+                try:
+                    # Convert the received code to integer for comparison
+                    if int(codigo) == self.password:
+                        if port:
+                            port.write("ACCESS_GARANTEED\n".encode())
+                        print("ACCESS_GRANTEED")
+                        # Create lock event
+                        cerradura = Cerradura(id_sensor, "ACCESO", "PASSWORD")
+                        self.mongo_cerradura.guardar_datos(cerradura.serializar())
+                        # Try to send immediately
+                        self.mongo_cerradura.subir_a_mongo()
+                    else:
+                        if port:
+                            port.write("ACCESS_DENIED\n".encode())
+                        print("ACCESS_DENIED")
+                except ValueError:
+                    if port:
+                        port.write("ACCESS_DENIED\n".encode())
+                    print("ACCESS_DENIED - Invalid code format")
 
-        elif tipo_sensor == "IDCRD":
-            rfid_code = valores[0].strip()
-            rfid = Rfid(rfid_code, "Unknown", "Entry", self.device_name)
-            self.mongo_rfid.guardar_datos(rfid.guardar())
-            # Try to send immediately
-            self.mongo_rfid.subir_a_mongo()
+            elif tipo_sensor == "PADPSO":
+                try:
+                    if len(valores) >= 2:
+                        codigo = valores[0]
+                        # Clean up the value if needed
+                        peso_str = valores[1].strip().split('\r')[0]
+                        peso_valor = float(peso_str)
+                        peso = Peso(codigo, peso_valor, self.device_name)
+                        self.mongo_peso.guardar_datos(peso.guardar())
+                        # Try to send immediately
+                        self.mongo_peso.subir_a_mongo()
+                    else:
+                        logging.warning(f"Formato inválido para sensor PADPSO: {valores}")
+                except (ValueError, IndexError):
+                    logging.warning(f"Valores no válidos para sensor PADPSO ignorados: {valores}")
+                    return
+
+            elif tipo_sensor == "IDCRD":
+                rfid_code = valores[0].strip()
+                # Check if the RFID code is authorized
+                if rfid_code in self.rfids_autorizados:
+                    if port:
+                        port.write("ACCESS_GARANTEED\n".encode())
+                    print(f"ACCESS_GRANTED - RFID: {rfid_code}")
+                    # Create lock event for successful RFID access
+                    cerradura = Cerradura(id_sensor, "ACCESO", "RFID")
+                    self.mongo_cerradura.guardar_datos(cerradura.serializar())
+                    self.mongo_cerradura.subir_a_mongo()
+                else:
+                    if port:
+                        port.write("ACCESS_DENIED\n".encode())
+                    print(f"ACCESS_DENIED - RFID no autorizado: {rfid_code}")
+            else:
+                # If the message type is unrecognized, simply ignore it
+                logging.info(f"Tipo de sensor no reconocido, ignorando: {tipo_sensor}")
+
+        except Exception as e:
+            # Catch any other unexpected errors
+            logging.warning(f"Error al procesar mensaje: {e}")
+            return
 
     def intentar_subir_pendientes(self):
         """Try to upload pending data to MongoDB"""
@@ -296,6 +414,9 @@ class Main:
 
         # Update variables from API
         self.actualizar_variables_desde_api()
+
+        # Load authorized RFIDs on startup
+        self.cargar_rfids_autorizados()
 
         try:
             # Try to open all available COM ports
@@ -323,6 +444,8 @@ class Main:
                 # Check API for updates
                 if time.time() - self.last_api_check >= self.check_interval:
                     self.actualizar_variables_desde_api()
+                    # Reload RFID list after API check
+                    self.cargar_rfids_autorizados()
                     self.last_api_check = time.time()
 
                 # Check if it's time to upload data
