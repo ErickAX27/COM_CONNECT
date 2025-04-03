@@ -1,15 +1,12 @@
 import os
 import serial
 import time
-import json
 import requests
-from datetime import datetime
 from CLASS.PIR import MovimientoPIR
 from CLASS.PESO import Peso
 from CLASS.LUZ import Luz
 from CLASS.DHT import DHT
 from CLASS.CERRADURA import Cerradura
-from CLASS.RFID import Rfid
 from MongoSync import MongoSync
 from dotenv import load_dotenv
 import logging
