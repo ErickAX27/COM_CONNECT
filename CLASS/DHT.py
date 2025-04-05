@@ -1,8 +1,9 @@
 import time
 class DHT:
-    def __init__(self,Temperatura,Humedad):
+    def __init__(self,Humedad,Temperatura,area_id):
         self.temperature_c = Temperatura
         self.humidity_percent = Humedad
+        self.area_id = area_id
         if self.temperature_c < 0 or self.temperature_c > 60:
             self.alert_triggered = True
             self.alert_message = "Temperature outside the permitted range"
@@ -16,6 +17,7 @@ class DHT:
 
     def serializar(self):
         return {
+            "area_id": self.area_id,
             "temperature_c": self.temperature_c,
             "humidity_percent": self.humidity_percent,
             "event_date": self.event_date,

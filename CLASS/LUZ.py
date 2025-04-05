@@ -1,6 +1,7 @@
 import time
 class Luz:
-    def __init__(self, valor):
+    def __init__(self, valor, area_id):
+        self.area_id = area_id
         if valor == 1:
             self.status = "off"
             self.alert_triggered = False
@@ -13,6 +14,7 @@ class Luz:
 
     def serializar(self):
             return {
+                "area_id": self.area_id,
                 "status": self.status,
                 "event_date": self.event_date,
                 "alert_triggered": self.alert_triggered,

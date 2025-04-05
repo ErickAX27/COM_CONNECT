@@ -1,7 +1,8 @@
 from datetime import datetime
 class Peso:
 
-    def __init__(self,codigo, peso,zona):
+    def __init__(self,codigo, peso,zona, area_id):
+        self.area_id = area_id
         self.codigo = codigo
         self.peso = peso
         self.zona = zona
@@ -9,12 +10,12 @@ class Peso:
 
     def serializar(self):
         return {
-            "event_date": {
-                "$date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-            },
+            "area_id": self.area_id,
+            "$date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
             "area_name": self.zona,
-            "delivery_id": self.codigo,
-            "weight_kg": self.peso
+            "exit_code": self.codigo,
+            "weight_kg": self.peso,
+            "weight_status": False,
         }
 
     def guardar(self):
