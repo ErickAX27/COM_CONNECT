@@ -1,1 +1,10 @@
-[]
+[
+    {
+        "area_id": "1",
+        "temperature_c": 25.0,
+        "humidity_percent": 32.0,
+        "event_date": "2025-04-05 18:39:27",
+        "alert_triggered": false,
+        "alert_message": "Temperature within the permitted range"
+    }
+]

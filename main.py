@@ -57,32 +57,32 @@ class Main:
             self.mongo_temp = MongoSync(
                 "TemperatureHumiditySensor",
                 os.path.join(self.jsons_dir, "DHT.json"),
-                os.path.join(self.local_dir, "local_DHT.json")
+                os.path.join(self.local_dir, "local_DHT.json"), "TEMP"
             )
             self.mongo_light = MongoSync(
                 "LightSensor",
                 os.path.join(self.jsons_dir, "luz.json"),
-                os.path.join(self.local_dir, "local_luz.json")
+                os.path.join(self.local_dir, "local_luz.json"), "LUZ"
             )
             self.mongo_pir = MongoSync(
                 "PirSensor",
                 os.path.join(self.jsons_dir, "pir.json"),
-                os.path.join(self.local_dir, "local_pir.json")
+                os.path.join(self.local_dir, "local_pir.json"), "Movimiento"
             )
             self.mongo_peso = MongoSync(
                 "WeightSensor",
                 os.path.join(self.jsons_dir, "peso.json"),
-                os.path.join(self.local_dir, "local_peso.json")
+                os.path.join(self.local_dir, "local_peso.json"), "Peso"
             )
             self.mongo_cerradura = MongoSync(
                 "LockSensor",
                 os.path.join(self.jsons_dir, "cerradura.json"),
-                os.path.join(self.local_dir, "local_cerradura.json")
+                os.path.join(self.local_dir, "local_cerradura.json"), "Acceso"
             )
             self.mongo_rfid = MongoSync(
                 "RfidSensor",
                 os.path.join(self.jsons_dir, "rfid.json"),
-                os.path.join(self.local_dir, "local_rfid.json")
+                os.path.join(self.local_dir, "local_rfid.json"), "RFID"
             )
 
             # Initialize timers
@@ -310,10 +310,8 @@ class Main:
             tipo_sensor = "PADPSO"
             partes = dato.split(":")
             id_sensor = "00"
-            if len(partes) >= 3:
-                valores = [partes[1], partes[2]]
-            else:
-                valores = ["0", "0"]
+            # Capturar código, peso y protocolo si existen
+            valores = partes[1:] if len(partes) > 1 else []
             return tipo_sensor, id_sensor, valores
         elif dato.startswith("IDCRD"):
             tipo_sensor = "IDCRD"
@@ -363,30 +361,22 @@ class Main:
 
             elif tipo_sensor == "PADPSO":
                 try:
-                    if len(valores) >= 2:
-                        codigo = valores[0]
+                    if len(valores) >= 3:  # Requiere código, peso y protocolo
+                        codigo = valores[0].strip()
                         peso_str = valores[1].strip().split('\r')[0]
                         peso_valor = float(peso_str)
-                        if len(valores) == 3 and valores[2] == "ADD":
-                            payload = {
-                                'exit_code': codigo,
-                                'stock_weight': peso_valor
-                            }
-                            api_endpoint_stock = os.getenv("API_ENDPOINT_STOCK")
-                            try:
-                                response = requests.put(api_endpoint_stock, json=payload)
-                                response.raise_for_status()
-                                print(f"Datos enviados a la API: {payload}")
-                            except requests.exceptions.RequestException as e:
-                                logging.warning(f"Error al enviar datos a la API: {e}")
-                        else:
-                            peso = Peso(codigo, peso_valor, self.device_name, self.area_id)
-                            self.mongo_peso.guardar_datos(peso.guardar())
-                            self.mongo_peso.subir_a_mongo()
+                        protocolo = valores[2].strip().split('\r')[0]  # Extraer protocolo
+
+                        # Crear objeto Peso con protocolo
+                        peso = Peso(codigo, peso_valor, self.device_name, self.area_id, protocolo)
+                        self.mongo_peso.guardar_datos(peso.guardar())
+                        self.mongo_peso.subir_a_mongo()
+
+                        print(f"Datos de peso guardados: código={codigo}, peso={peso_valor}, protocolo={protocolo}")
                     else:
                         logging.warning(f"Formato inválido para sensor PADPSO: {valores}")
-                except (ValueError, IndexError):
-                    logging.warning(f"Valores no válidos para sensor PADPSO ignorados: {valores}")
+                except (ValueError, IndexError) as e:
+                    logging.warning(f"Valores no válidos para sensor PADPSO: {valores} - Error: {e}")
                     return
 
             elif tipo_sensor == "IDCRD":
@@ -452,8 +442,24 @@ class Main:
                     self.actualizar_variables_desde_api()
                     self.cargar_rfids_autorizados()
                     self.last_api_check = time.time()
+                    for port in available_ports:
+                        try:
+                            port.write("SCAN_INO\n".encode())
+                            print(f"Sent SCAN_INO command to {port.name}")
+                        except Exception as e:
+                            print(f"Error sending SCAN_INO to {port.name}: {e}")
+
 
                 if current_time_ms - self.last_reading_time >= self.reading_time:
+                    # Send SCAN_INO command to all available COM ports
+                    for port in available_ports:
+                        try:
+                            port.write("SCAN_INO\n".encode())
+                            print(f"Sent SCAN_INO command to {port.name}")
+                        except Exception as e:
+                            print(f"Error sending SCAN_INO to {port.name}: {e}")
+
+                    # Then perform the existing operations
                     self.mongo_temp.subir_a_mongo()
                     self.mongo_light.subir_a_mongo()
                     self.mongo_pir.subir_a_mongo()

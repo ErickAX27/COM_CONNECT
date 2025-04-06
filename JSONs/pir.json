@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "area_id": "1",
+        "motion_detected": false,
+        "alert_triggered": false,
+        "alert_message": "No movement detected in the storage area",
+        "event_date": "2025-04-05 18:39:26"
+    }
+]

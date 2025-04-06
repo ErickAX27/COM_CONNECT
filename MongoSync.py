@@ -11,7 +11,8 @@ load_dotenv()
 logging.basicConfig(level=logging.WARNING)
 
 class MongoSync:
-    def __init__(self, nombre_coleccion: str, archivo_json: str, respaldo_json: str):
+    def __init__(self, nombre_coleccion: str, archivo_json: str, respaldo_json: str, end_point:str):
+        self.end_point = end_point
         self.nombre_coleccion = nombre_coleccion
         self.archivo_json = archivo_json  # Archivo para pendientes
         self.respaldo_json = respaldo_json  # Archivo para respaldo permanente
@@ -72,20 +73,6 @@ class MongoSync:
         self._guardar_dato(self.archivo_json, dato)
         # Guardar en respaldo permanente
         self._guardar_dato(self.respaldo_json, dato)
-
-    def guardar_datos_locales(self):
-        """Mueve los datos del archivo temporal al local"""
-        if os.path.exists(self.archivo_json):
-            with open(self.archivo_json, "r") as temp_file:
-                try:
-                    temp_data = json.load(temp_file)
-                    with open(self.respaldo_json, "a") as local_file:
-                        json.dump(temp_data, local_file)
-                    # Limpiar archivo temporal
-                    with open(self.archivo_json, "w") as temp_file:
-                        json.dump([], temp_file)
-                except json.JSONDecodeError:
-                    pass
 
     def subir_a_mongo(self):
         """Intenta subir los datos pendientes a MongoDB"""
@@ -167,4 +154,3 @@ class MongoSync:
         except errors.PyMongoError as e:
             logging.error(f"Error al consultar documentos de MongoDB: {e}")
             return []
-

@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "area_id": "1",
+        "status": "on",
+        "event_date": "2025-04-05 18:39:27",
+        "alert_triggered": true,
+        "alert_message": "The light is on in the storage area"
+    }
+]
